@@ -1,0 +1,56 @@
+<!DOCTYPE html>
+<html>
+
+<head>
+    <title>Login</title>
+</head>
+
+<body>
+
+    <h2>Login</h2>
+
+    <input type="email" id="email" placeholder="Enter Email"><br><br>
+
+    <input type="password" id="password" placeholder="Enter Password"><br><br>
+
+    <button onclick="loginUser()">Login</button>
+
+    <script type="module">
+
+        import { initializeApp } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-app.js";
+        import { getAuth, signInWithEmailAndPassword }
+            from "https://www.gstatic.com/firebasejs/10.12.2/firebase-auth.js";
+
+        const firebaseConfig = {
+            apiKey: "AIzaSyAqMWOE_uR6AUX9u-g9QybNPeLE8B361aM",
+            authDomain: "food-explorer-fc408.firebaseapp.com",
+            projectId: "food-explorer-fc408",
+            storageBucket: "food-explorer-fc408.appspot.com",
+            messagingSenderId: "247217642461",
+            appId: "1:247217642461:web:000b3cd0d31c8bcf1eb434"
+        };
+
+        const app = initializeApp(firebaseConfig);
+        const auth = getAuth(app);
+
+        window.loginUser = function () {
+
+            const email = document.getElementById("email").value;
+            const password = document.getElementById("password").value;
+
+            signInWithEmailAndPassword(auth, email, password)
+                .then(() => {
+                    alert("Login Successful");
+                    window.location.href = "home.html";
+                })
+                .catch((error) => {
+                    alert(error.message);
+                });
+
+        }
+
+    </script>
+
+</body>
+
+</html>
