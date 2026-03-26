@@ -2,100 +2,148 @@
 <html>
 
 <head>
-
     <title>Food Explorer</title>
 
     <style>
         body {
             font-family: Arial;
-            background: #f5f5f5;
+            background: #f4f4f4;
+            text-align: center;
             margin: 0;
         }
 
-        header {
-            background: #ff5722;
-            color: white;
-            padding: 15px;
-            font-size: 22px;
-            text-align: center;
+        /* 3 dot menu */
+        .menu-container {
+            position: fixed;
+            top: 15px;
+            left: 15px;
         }
 
-        .container {
-            width: 500px;
-            margin: auto;
-        }
-
-        .upload-box {
-            background: white;
-            padding: 15px;
-            margin-top: 20px;
-            border-radius: 10px;
-        }
-
-        input,
-        textarea {
-            width: 100%;
-            padding: 10px;
-            margin-top: 10px;
-        }
-
-        button {
-            padding: 10px;
-            margin-top: 10px;
-            background: #ff5722;
-            color: white;
-            border: none;
+        .menu-icon {
+            font-size: 28px;
             cursor: pointer;
         }
 
-        .post {
+        .menu-dropdown {
+            display: none;
             background: white;
-            margin-top: 20px;
-            border-radius: 10px;
-            overflow: hidden;
-        }
-
-        .post img {
-            width: 100%;
-        }
-
-        .post-content {
+            border-radius: 8px;
+            box-shadow: 0 2px 10px rgba(0, 0, 0, 0.2);
             padding: 10px;
         }
 
-        .post-actions {
-            margin-top: 10px;
+        .menu-dropdown a {
+            display: block;
+            padding: 8px 15px;
+            text-decoration: none;
+            color: black;
+        }
+
+        .menu-dropdown a:hover {
+            background: #eee;
+        }
+
+        /* header */
+        h1 {
+            color: #ff5722;
+            margin-top: 40px;
+        }
+
+        /* logout button */
+        .logout-btn {
+            position: fixed;
+            top: 15px;
+            right: 20px;
+            padding: 7px 15px;
+            background: #ff5722;
+            color: white;
+            border: none;
+            border-radius: 6px;
+            cursor: pointer;
+        }
+
+        /* post box */
+        .post-box {
+            background: white;
+            padding: 15px;
+            margin: 20px auto;
+            width: 350px;
+            border-radius: 10px;
+            box-shadow: 0 2px 10px rgba(0, 0, 0, 0.1);
+        }
+
+        .post-box img {
+            width: 100%;
+            border-radius: 10px;
+        }
+
+        .feed {
+            margin-top: 30px;
+        }
+
+        button {
+            padding: 8px 15px;
+            border: none;
+            background: #ff5722;
+            color: white;
+            border-radius: 5px;
+            cursor: pointer;
+        }
+
+        textarea {
+            width: 90%;
+            height: 60px;
+        }
+
+        input {
+            padding: 6px;
         }
     </style>
-
 </head>
 
 <body>
 
-    <header>
-        🍔 Food Explorer
-    </header>
+    <!-- 3 dot menu -->
+    <div class="menu-container">
 
-    <div class="container">
+        <div class="menu-icon" onclick="toggleMenu()">⋮</div>
 
-        <div class="upload-box">
-
-            <h3>Share Your Food</h3>
-
-            <input id="foodName" placeholder="Food Name">
-
-            <input id="imageUrl" placeholder="Image URL">
-
-            <textarea id="review" placeholder="Write review"></textarea>
-
-            <button onclick="addPost()">Post</button>
-
+        <div id="menu" class="menu-dropdown">
+            <a href="login.html">Login</a>
+            <a href="signup.html">Signup</a>
         </div>
-
-        <div id="posts"></div>
 
     </div>
 
+    <button class="logout-btn" onclick="logout()">Logout</button>
+
+    <h1>🍔 Food Explorer</h1>
+
+    <h3 id="userEmail"></h3>
+
+    <!-- Post box -->
+    <div class="post-box">
+
+        <input id="foodName" placeholder="Food Name"><br><br>
+
+        <textarea id="review" placeholder="Write review"></textarea><br><br>
+
+        <button id="upload_widget">Upload Food Image</button>
+
+        <br><br>
+
+        <img id="foodImage" width="250">
+
+        <br><br>
+
+        <button onclick="addPost()">Post</button>
+
+    </div>
+
+    <div class="feed" id="feed"></div>
+
+
+    <script src="https://upload-widget.cloudinary.com/global/all.js"></script>
 
     <script type="module">
 
@@ -107,9 +155,14 @@
             addDoc,
             getDocs,
             doc,
-            updateDoc,
-            increment
+            updateDoc
         } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore.js";
+
+        import {
+            getAuth,
+            onAuthStateChanged,
+            signOut
+        } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-auth.js";
 
 
         const firebaseConfig = {
@@ -124,68 +177,100 @@
 
         };
 
-
         const app = initializeApp(firebaseConfig);
+
         const db = getFirestore(app);
 
+        const auth = getAuth(app);
+
+        let imageUrl = "";
+
+        /* show logged user */
+        onAuthStateChanged(auth, (user) => {
+
+            if (user) {
+
+                document.getElementById("userEmail").innerText =
+                    "Logged in as: " + user.email;
+
+            }
+
+        });
+
+        /* cloudinary upload */
+
+        const widget = cloudinary.createUploadWidget({
+
+            cloudName: "dzlwlp2fxE",
+            uploadPreset: "food_upload"
+
+        },
+
+            (error, result) => {
+
+                if (!error && result && result.event === "success") {
+
+                    imageUrl = result.info.secure_url;
+
+                    document.getElementById("foodImage").src = imageUrl;
+
+                }
+
+            });
+
+        document.getElementById("upload_widget").onclick = function () {
+
+            widget.open();
+
+        };
+
+        /* add post */
 
         window.addPost = async function () {
 
             const food = document.getElementById("foodName").value;
-            const image = document.getElementById("imageUrl").value;
             const review = document.getElementById("review").value;
 
             await addDoc(collection(db, "posts"), {
 
                 food: food,
-                image: image,
                 review: review,
+                image: imageUrl,
                 likes: 0
 
             });
 
-            alert("Post Added");
+            alert("Post uploaded");
 
             loadPosts();
 
-        }
+        };
 
+        /* load posts */
 
         async function loadPosts() {
 
             const querySnapshot = await getDocs(collection(db, "posts"));
 
-            const postDiv = document.getElementById("posts");
-
-            postDiv.innerHTML = "";
+            let html = "";
 
             querySnapshot.forEach((docSnap) => {
 
                 const data = docSnap.data();
 
-                postDiv.innerHTML += `
+                html += `
 
-<div class="post">
-
-<img src="${data.image}">
-
-<div class="post-content">
+<div class="post-box">
 
 <h3>${data.food}</h3>
 
+<img src="${data.image}">
+
 <p>${data.review}</p>
 
-<div class="post-actions">
-
-<button onclick="likePost('${docSnap.id}')">
-
-❤️ Like (${data.likes || 0})
-
+<button onclick="likePost('${docSnap.id}', ${data.likes || 0})">
+❤️ ${data.likes || 0}
 </button>
-
-</div>
-
-</div>
 
 </div>
 
@@ -193,25 +278,53 @@
 
             });
 
+            document.getElementById("feed").innerHTML = html;
+
         }
 
+        /* like post */
 
-        window.likePost = async function (postId) {
+        window.likePost = async function (id, currentLikes) {
 
-            const postRef = doc(db, "posts", postId);
+            const ref = doc(db, "posts", id);
 
-            await updateDoc(postRef, {
+            await updateDoc(ref, {
 
-                likes: increment(1)
+                likes: (currentLikes || 0) + 1
 
             });
 
             loadPosts();
 
-        }
+        };
 
+        /* logout */
+
+        window.logout = async function () {
+
+            await signOut(auth);
+
+            alert("Logged out");
+
+            window.location.href = "login.html";
+
+        };
 
         loadPosts();
+
+    </script>
+
+    <script>
+
+        /* menu toggle */
+
+        function toggleMenu() {
+
+            const menu = document.getElementById("menu");
+
+            menu.style.display = menu.style.display === "block" ? "none" : "block";
+
+        }
 
     </script>
 
